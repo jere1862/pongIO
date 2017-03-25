@@ -1,6 +1,7 @@
 var Pong = {
-    paddleSpeed: 600,
-    maxBallVelocity: 1000
+    paddleSpeed: 700,
+    maxBallVelocity: 1000,
+    initialBallSpeed: 600
 };
 
 var leftPaddle;
@@ -50,9 +51,9 @@ function create(){
     game.physics.enable(leftPaddle, Phaser.Physics.ARCADE);
     game.physics.enable(rightPaddle, Phaser.Physics.ARCADE);
 
-    ball.body.velocity.setTo(-400, 400);
     ball.body.collideWorldBounds = true;
     ball.body.bounce.set(1.05, 1.05);
+    initializeBall();
 
     leftPaddle.body.collideWorldBounds = true;
     rightPaddle.body.collideWorldBounds = true;
@@ -98,4 +99,17 @@ function verifyMaxBallSpeed(){
     if(ball.body.velocity.y > Pong.maxBallVelocity){
         ball.body.velocity.y = Pong.maxBallVelocity;
     }
+}
+
+function initializeBall(){
+    xDirection = Math.random() - 0.5;
+    yDirection=  (Math.random() * (1 - 0.2) + 0.2);   
+    yScale = Math.random() > 0.5 ? -1 : 1;
+    console.log(yDirection * yScale)
+    if(xDirection > 0 ){
+        xDirection = 1;
+    }else{
+        xDirection = -1;
+    }
+    ball.body.velocity.setTo(xDirection * Pong.initialBallSpeed, yDirection * yScale * Pong.initialBallSpeed);
 }
