@@ -26,6 +26,7 @@ function preload() {
 
 // Called after preload
 function create(){
+    var socket = io();
     // Create some text in the middle of the game area
     //game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
     game.scale.pageAlignHorizontally = true;
@@ -53,7 +54,7 @@ function create(){
 
     ball.body.collideWorldBounds = true;
     ball.body.bounce.set(1.05, 1.05);
-    initializeBall();
+    placeBall();
 
     leftPaddle.body.collideWorldBounds = true;
     rightPaddle.body.collideWorldBounds = true;
@@ -101,11 +102,10 @@ function verifyMaxBallSpeed(){
     }
 }
 
-function initializeBall(){
+function placeBall(){
     xDirection = Math.random() - 0.5;
     yDirection=  (Math.random() * (1 - 0.2) + 0.2);   
     yScale = Math.random() > 0.5 ? -1 : 1;
-    console.log(yDirection * yScale)
     if(xDirection > 0 ){
         xDirection = 1;
     }else{
