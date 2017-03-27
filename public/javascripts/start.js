@@ -10,6 +10,8 @@ var ball;
 var wasd;
 var keys;
 
+var roomNumber = 0;
+
 // Create a new Phaser game object with a single state
 var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game-holder', {
     preload: preload,
@@ -27,11 +29,22 @@ function preload() {
 // Called after preload
 function create(){
     var socket = io();
+    socket.on('creationResponse', function(user){
+        console.log(user);
+        roomNumber = user.room;
+        //Debug
+        addRoomNumber(roomNumber);
+    });
+
+    socket.on('update', function(a){
+        console.log(a.test);
+    });
     // Create some text in the middle of the game area
     //game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
     game.scale.pageAlignHorizontally = true;
     game.scale.pageAlignVertically = true;
 
+    
     game.stage.backgroundColor = '#87CEEB';
 
     // Start physics engine
@@ -68,6 +81,7 @@ function create(){
 
 // Called each frame
 function update(){
+    
     leftPaddle.body.velocity.y = 0;
     rightPaddle.body.velocity.y = 0;
 
@@ -112,4 +126,21 @@ function placeBall(){
         xDirection = -1;
     }
     ball.body.velocity.setTo(xDirection * Pong.initialBallSpeed, yDirection * yScale * Pong.initialBallSpeed);
+}
+
+function addRoomNumber(roomNumber){
+    var style = { font: "bold 32px Arial", fill: "#fff", boundsAlignH: "center", boundsAlignV: "middle" };
+
+    //  The Text is positioned at 0, 100
+    text = game.add.text(0, 0, "Room: "+roomNumber, style);
+    text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
+
+    //  We'll set the bounds to be from x0, y100 and be 800px wide by 100px high
+    text.setTextBounds(0, 40, 800, 100);
+}
+
+function addPaddle(){
+    var graphics = game.add.graphics(0,0);
+    graphics.beginFill(0xFF000000, 1);
+    graphics.drawRect(300, 300, 30, 30);
 }
