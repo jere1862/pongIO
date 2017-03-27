@@ -6,13 +6,15 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var socket_io = require('socket.io');
 
-
 var app = express();
 var io = socket_io();
 app.io = io;
 
-var index = require('./routes/index')(io);
+var index = require('./routes/index')();
 var users = require('./routes/users');
+
+// Start the game server
+var gameServer = require('./GameServer/GameServer.js')(io);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
