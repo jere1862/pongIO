@@ -15,6 +15,7 @@ module.exports = function(io){
         });
     });
 
+    // TODO: handle room deletion and send info to client 
     io.on('disconnect', function(socket){
         console.log('A user disconnected.');
     })

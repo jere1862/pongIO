@@ -1,16 +1,22 @@
 var Pong = {
     paddleSpeed: 700,
-    maxBallVelocity: 1000,
-    initialBallSpeed: 600
+    maxBallVelocity: 100000000,
+    initialBallSpeed: 600,
+    clientPaddleColor: 0xBAEBAE,
+    enemyPaddleColor: 0xF6546A,
+    paddleSize: {'x': 20, 'y': 80},
+    paddlePadding: 20
 };
 
-var leftPaddle;
-var rightPaddle;
+var clientPaddle;
+var enemyPaddle;
 var ball;
 var wasd;
 var keys;
 
 var roomNumber = 0;
+var playerNumber;
+var connectionEstablished = false;
 
 // Create a new Phaser game object with a single state
 var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game-holder', {
@@ -28,22 +34,10 @@ function preload() {
 
 // Called after preload
 function create(){
-    var socket = io();
-    socket.on('creationResponse', function(user){
-        console.log(user);
-        roomNumber = user.room;
-        //Debug
-        addRoomNumber(roomNumber);
-    });
-
-    socket.on('update', function(a){
-        console.log(a.test);
-    });
     // Create some text in the middle of the game area
     //game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
     game.scale.pageAlignHorizontally = true;
     game.scale.pageAlignVertically = true;
-
     
     game.stage.backgroundColor = '#87CEEB';
 
@@ -54,56 +48,60 @@ function create(){
     ball = game.add.sprite(game.world.centerX, game.world.centerY, 'ball');
     ball.anchor.set(0.5, 0.5);
 
-    leftPaddle = game.add.sprite(20, game.world.centerY, 'paddle');
-    leftPaddle.anchor.set(0.5, 0.5);
-
-    rightPaddle = game.add.sprite(game.world.width-20, game.world.centerY, 'otherPaddle');
-    rightPaddle.anchor.set(0.5, 0.5);
-
     // Add physics to ball 
     game.physics.enable(ball, Phaser.Physics.ARCADE);
-    game.physics.enable(leftPaddle, Phaser.Physics.ARCADE);
-    game.physics.enable(rightPaddle, Phaser.Physics.ARCADE);
-
     ball.body.collideWorldBounds = true;
     ball.body.bounce.set(1.05, 1.05);
+
     placeBall();
+    
+    var socket = io();
+    socket.on('creationResponse', function(user){
+        console.log(user);
+        roomNumber = user.room;
+        playerNumber = user.playerNumber;
+        createPaddles();
+        connectionEstablished = true;
+        //Debug
+        addRoomNumber(roomNumber);
+    });
+    
+    socket.on('update', function(a){
+        console.log(a.test);
+    });
 
-    leftPaddle.body.collideWorldBounds = true;
-    rightPaddle.body.collideWorldBounds = true;
-    leftPaddle.body.immovable = true;
-    rightPaddle.body.immovable = true;
-
-    // Set keys
+    // Add keyboard inpugs
     keys = game.input.keyboard.createCursorKeys();
     wasd = game.input.keyboard.addKeys( { 'up': Phaser.KeyCode.W, 'down': Phaser.KeyCode.S, 'left': Phaser.KeyCode.A, 'right': Phaser.KeyCode.D } );
 }
 
 // Called each frame
 function update(){
-    
-    leftPaddle.body.velocity.y = 0;
-    rightPaddle.body.velocity.y = 0;
+    // TODO: establish connection before handling the sprites
+    if(connectionEstablished){
+        clientPaddle.body.velocity.y = 0;
+        enemyPaddle.body.velocity.y = 0;
 
-    checkKeyInputs();
-    verifyMaxBallSpeed();
+        checkKeyInputs();
+        verifyMaxBallSpeed();
 
-    game.physics.arcade.collide(leftPaddle, ball);
-    game.physics.arcade.collide(rightPaddle, ball);
+        game.physics.arcade.collide(clientPaddle, ball);
+        game.physics.arcade.collide(enemyPaddle, ball);
+    }
+}
+
+function render(){
+    game.debug.bodyInfo(clientPaddle, 32, 32);
+    game.debug.body(clientPaddle);
+    game.debug.body(enemyPaddle);
 }
 
 function checkKeyInputs(){
-    if(wasd.up.isDown){
-        leftPaddle.body.velocity.y -= Pong.paddleSpeed;
+    if(wasd.up.isDown || keys.up.isDown){
+        clientPaddle.body.velocity.y -= Pong.paddleSpeed;
     }
-    if(keys.up.isDown){
-        rightPaddle.body.velocity.y -= Pong.paddleSpeed;
-    }
-    if(wasd.down.isDown){
-        leftPaddle.body.velocity.y += Pong.paddleSpeed;
-    }
-    if(keys.down.isDown){
-        rightPaddle.body.velocity.y += Pong.paddleSpeed;
+    if(wasd.down.isDown || keys.down.isDown){
+        clientPaddle.body.velocity.y += Pong.paddleSpeed;
     }
 }
 
@@ -139,8 +137,34 @@ function addRoomNumber(roomNumber){
     text.setTextBounds(0, 40, 800, 100);
 }
 
-function addPaddle(){
-    var graphics = game.add.graphics(0,0);
-    graphics.beginFill(0xFF000000, 1);
-    graphics.drawRect(300, 300, 30, 30);
+function createColoredRectangle(color, size){
+    var graphics = game.add.graphics();
+    graphics.beginFill(color, 1);
+    graphics.drawRect(0, 0, size.x, size.y);
+    graphics.endFill();
+    graphics.boundsPadding = 0;
+    return graphics;
+}
+
+function createPaddles(){
+    if(playerNumber == 1){
+        // Client paddle is on the left
+        clientPaddle = addPaddle(Pong.clientPaddleColor, Pong.paddlePadding);
+        enemyPaddle = addPaddle(Pong.enemyPaddleColor, game.world.width - Pong.paddlePadding);
+    }else{
+        // Client paddle is on the right
+        clientPaddle = addPaddle(Pong.clientPaddleColor, game.world.width - Pong.paddlePadding);
+        enemyPaddle = addPaddle(Pong.enemyPaddleColor, Pong.paddlePadding);
+    }
+}
+
+function addPaddle(color, position){
+    paddleGraphics = createColoredRectangle(color, Pong.paddleSize);
+    paddleSprite = game.add.sprite(position, game.world.centerY, paddleGraphics.generateTexture());
+    paddleGraphics.destroy();
+    game.physics.enable(paddleSprite, Phaser.Physics.ARCADE);
+    paddleSprite.body.collideWorldBounds = true;
+    paddleSprite.body.immovable = true;
+    paddleSprite.anchor.set(0.5, 0.5);
+    return paddleSprite;
 }
