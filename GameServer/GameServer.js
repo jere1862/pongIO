@@ -6,9 +6,7 @@ module.exports = function(io){
     // TOOO: Use forks or workers to handle different channels
     
     io.on('connection', function(socket) {
-      console.log('Connection');
       findRoom((playerNumber, room)=>{
-        console.log('PlayerNumber: '+playerNumber);
         var user = new User(socket.id, room.id, playerNumber);
         users.push(user);
         socket.emit('creationResponse', {'user':user, 'startingBallDirection': room.startingDirection})
@@ -27,7 +25,6 @@ module.exports = function(io){
 }
 
  function findRoom(callback){
-  console.log('Finding room');
   if(roomsHolder.length == 0){
     return createRoom(function(id){
       callback(1, roomsHolder.find(room => room.id == id));
@@ -57,7 +54,6 @@ function User(userId, roomId = 0, playerNumber){
 }
 
 function createRoom(callback){
-  console.log('Creating room');
   id = new Date().getTime();
   createRandomBallDirection(function(direction){
     var room = new Room(id, direction);
