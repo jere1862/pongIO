@@ -50,13 +50,16 @@ function create(){
 
     //Add game objects to the scene
     addBall();
-    
     socket = io();
     socket.on('creationResponse', function(serverData){
         user = serverData.user;
         startingBallDirection = serverData.startingBallDirection;
         //TODO: start ball with velocity 0
         placeBall();
+		var scoreText
+        roomNumber = user.room;
+		//scoreText = score();
+        playerNumber = user.playerNumber;
         createPaddles();
         newEnemyPaddlePosition = game.world.centerY;
         connectionEstablished = true;
@@ -194,4 +197,23 @@ function receivePaddleData(){
         console.log('positionUpdate');
         newEnemyPaddlePosition = position;
     });
+}
+
+// function playerScored){
+// //if ball touch right wall
+	// //+1 to left player 
+// //if  ball touch left wall	
+	// //+1 to right player 
+	// if(ball.body)	
+// }
+
+function score(score){
+    var style = { font: "bold 40px Arial", fill: "#fff" , boundsAlignH: "center", boundsAlignV: "middle" };
+
+    //  The Text is positioned at 0, 100
+    text = game.add.text(0, 0, score, style);
+    text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
+
+    //  We'll set the bounds to be from x0, y100 and be 800px wide by 100px high
+    text.setTextBounds(0, 10, 800, 100);
 }
