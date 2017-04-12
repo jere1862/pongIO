@@ -16,7 +16,7 @@ var users = require('./routes/users');
 
 // Start the game server
 
-var gameServer = gameServer.listen(io);
+var gameServer = gameServer.start(io);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

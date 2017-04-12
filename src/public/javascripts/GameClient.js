@@ -151,7 +151,7 @@ function createCircleGraphcis(radius){
 }
 
 function createPaddles(){
-    if(user.playerNumber == 1){
+    if(user.number == 1){
         // Client paddle is on the left
         clientPaddle = addPaddle(Pong.clientPaddleColor, Pong.paddlePadding);
         enemyPaddle = addPaddle(Pong.enemyPaddleColor, game.world.width - Pong.paddlePadding);
