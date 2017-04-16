@@ -7,6 +7,12 @@ Communication.prototype.onPositionUpdate = function(socket, callback){
     });
 }
 
+Communication.prototype.onReady = function(socket, callback){
+    socket.on('ready', function(){
+        callback();
+    })
+};
+
 Communication.prototype.toClient = function(clientId, message){
     this.io.to(clientId).emit(message.name, message.content);
 }

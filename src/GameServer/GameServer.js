@@ -8,6 +8,7 @@ var User = function(userId, roomId = 0){
     this.id = userId;
     this.number = 0;
     this.room = roomId;
+    this.ready = false;
 
     this.setNumber = function(number){
       this.number = number;
@@ -20,15 +21,14 @@ exports.User = User;
 exports.start = function(io){
   initiateConnectonToClient(io, function(socket){
     Communication.onPositionUpdate(socket, function(clientData){
-      otherPlayerId = getOtherPlayerId(clientData.user.room, clientData.user.number, function(user){
-          if(typeof user != 'undefined'){
-            var message = {
-              'name': 'positionUpdate',
-              'content': clientData.position
-            }
-            Communication.toClient(user.id, message);
-          }
-      });
+      var otherPlayer = getOtherPlayer(clientData.user.room, clientData.user.number);
+      if(typeof otherPlayer != 'undefined'){
+        var message = {
+          'name': 'positionUpdate',
+          'content': clientData.position
+        }
+        Communication.toClient(otherPlayer.id, message);
+      }
     });
   });
 }
@@ -50,13 +50,27 @@ function initiateConnectonToClient(io, callback){
             'content': {'user':user, 'startingBallDirection': startingDirection}
           }
           Communication.toClient(socket.id, message)
+          Communication.onReady(socket, function(){
+            user.ready = true;
+            var otherPlayer = getOtherPlayer(room.id, user.number);
+            if(typeof otherPlayer != 'undefined'){
+              if(otherPlayer.ready){
+                startGame(user.id);
+                startGame(otherPlayer.id);
+              }
+            }
+          });
       });
     callback(socket);
   });
 }
 
-function getOtherPlayerId(roomId, playerNumber, callback){
-  callback(_.find(users, user => user.room === roomId && user.number !== playerNumber));
+function getUserFromId(id, room, callback){
+  return _.findWhere(room.users, {id: id});
+}
+
+function getOtherPlayer(roomId, playerNumber, callback){
+  return _.find(users, user => user.room === roomId && user.number !== playerNumber);
 } 
 
 // TODO: make something reusable for when ball is reset
@@ -73,3 +87,9 @@ function createRandomBallDirection(callback){
     callback({'x':xDirection, 'y': yDirection*yScale});
 }
 
+function startGame(userId){
+  var message = {
+    "name": "start" 
+  }
+  Communication.toClient(userId, message);
+}

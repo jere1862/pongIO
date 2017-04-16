@@ -1,4 +1,4 @@
-var Pong = {
+var Config = {
     paddleSpeed: 700,
     maxBallVelocity: 1000,
     initialBallSpeed: 600,
@@ -21,105 +21,81 @@ var keys;
 
 var user;
 
-var connectionEstablished = false;
-var socket;
-
-// Create a new Phaser game object with a single state
-var game = new Phaser.Game(800, 600, Phaser.AUTO, 'game-holder', {
-    preload: preload,
-    create: create,
-    update: update
-});
-
-// Called first
-function preload() {
+Pong.Game = function(game){
 }
 
-// Called after preload
-function create(){
-    // Create some text in the middle of the game area
-    //game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-    game.scale.pageAlignHorizontally = true;
-    game.scale.pageAlignVertically = true;
-    game.stage.disableVisibilityChange = true; // To disable pause on lost focus
-    
-    game.stage.backgroundColor = '#87CEEB';
+Pong.Game.prototype = {
+    // Called first
+    preload: function() {
+        user = game.user;
+        startingBallDirection = game.startingBallDirection;
+        roomNumber = game.roomNumber;
+    },
 
-    // Start physics engine
-    game.physics.startSystem(Phaser.Physics.ARCADE);
+    // Called after preload
+    create: function(){
+        // Create some text in the middle of the game area
+        //game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+        game.scale.pageAlignHorizontally = true;
+        game.scale.pageAlignVertically = true;
+        game.stage.disableVisibilityChange = true; // To disable pause on lost focus
+        game.physics.startSystem(Phaser.Physics.ARCADE);
+        game.stage.backgroundColor = '#87CEEB';
 
-    //Add game objects to the scene
-    addBall();
-    socket = io();
-    socket.on('creationResponse', function(serverData){
-        user = serverData.user;
-        startingBallDirection = serverData.startingBallDirection;
-        //TODO: start ball with velocity 0
-        placeBall();
-		var scoreText
-        roomNumber = user.room;
-		//scoreText = score();
-        playerNumber = user.playerNumber;
+        //Add game objects to the scene
+        addBall();
+        //var scoreText
+        //scoreText = score();
         createPaddles();
         newEnemyPaddlePosition = game.world.centerY;
-        connectionEstablished = true;
         receivePaddleData();
-        //Debug
         addRoomNumber(user.room);
-    });
-    //game.paused = true;
-    
-    socket.on('positionUpdate', function(position){
-        newEnemyPaddlePosition = position;
-    });
+        game.socket.on('positionUpdate', function(position){
+            newEnemyPaddlePosition = position;
+        });
 
-    // Add keyboard inpugs
-    keys = game.input.keyboard.createCursorKeys();
-    wasd = game.input.keyboard.addKeys( { 'up': Phaser.KeyCode.W, 'down': Phaser.KeyCode.S, 'left': Phaser.KeyCode.A, 'right': Phaser.KeyCode.D } );
-}
+        // Add keyboard inpugs
+        keys = game.input.keyboard.createCursorKeys();
+        wasd = game.input.keyboard.addKeys( { 'up': Phaser.KeyCode.W, 'down': Phaser.KeyCode.S, 'left': Phaser.KeyCode.A, 'right': Phaser.KeyCode.D } );
 
-// Called each frame
-function update(){
-    // TODO: establish connection before handling the sprites
-    if(connectionEstablished){
-        clientPaddle.body.velocity.y = 0;
-        enemyPaddle.body.position.y = newEnemyPaddlePosition;
-        checkKeyInputs();
-        verifyMaxBallSpeed();
+        onReadyFromServer();
+        sendReadyToServer();
+    },
 
-        game.physics.arcade.collide(clientPaddle, ball);
-        game.physics.arcade.collide(enemyPaddle, ball); 
+    // Called each frame
+    update: function(){
+            clientPaddle.body.velocity.y = 0;
+            enemyPaddle.body.position.y = newEnemyPaddlePosition;
+            checkKeyInputs();
+            verifyMaxBallSpeed();
 
-        if(oldClientPaddlePosition != clientPaddle.body.position.y){
-          oldClientPaddlePosition = clientPaddle.body.position.y;
-          sendPaddleData(clientPaddle.body.position.y);
-        }
+            game.physics.arcade.collide(clientPaddle, ball);
+            game.physics.arcade.collide(enemyPaddle, ball); 
+
+            if(oldClientPaddlePosition != clientPaddle.body.position.y){
+            oldClientPaddlePosition = clientPaddle.body.position.y;
+            sendPaddleData(clientPaddle.body.position.y);
+            }
     }
-}
 
-function render(){
 }
 
 function checkKeyInputs(){
     if(wasd.up.isDown || keys.up.isDown){
-        clientPaddle.body.velocity.y -= Pong.paddleSpeed;
+        clientPaddle.body.velocity.y -= Config.paddleSpeed;
     }
     if(wasd.down.isDown || keys.down.isDown){
-        clientPaddle.body.velocity.y += Pong.paddleSpeed;
+        clientPaddle.body.velocity.y += Config.paddleSpeed;
     }
 }
 
 function verifyMaxBallSpeed(){
-    if(ball.body.velocity.x > Pong.maxBallVelocity){
-        ball.body.velocity.x = Pong.maxBallVelocity;
+    if(ball.body.velocity.x > Config.maxBallVelocity){
+        ball.body.velocity.x = Config.maxBallVelocity;
     }
-    if(ball.body.velocity.y > Pong.maxBallVelocity){
-        ball.body.velocity.y = Pong.maxBallVelocity;
+    if(ball.body.velocity.y > Config.maxBallVelocity){
+        ball.body.velocity.y = Config.maxBallVelocity;
     }
-}
-
-function placeBall(){
-    ball.body.velocity.setTo(startingBallDirection.x * Pong.initialBallSpeed, startingBallDirection.y * Pong.initialBallSpeed);
 }
 
 function addRoomNumber(roomNumber){
@@ -144,7 +120,7 @@ function createPaddleGraphics(color, size){
 
 function createCircleGraphcis(radius){
     var graphics = game.add.graphics();
-    graphics.beginFill(Pong.ballColor, 1);
+    graphics.beginFill(Config.ballColor, 1);
     graphics.drawCircle(0, 0, radius);
     graphics.endFill();
     return graphics;
@@ -153,17 +129,17 @@ function createCircleGraphcis(radius){
 function createPaddles(){
     if(user.number == 1){
         // Client paddle is on the left
-        clientPaddle = addPaddle(Pong.clientPaddleColor, Pong.paddlePadding);
-        enemyPaddle = addPaddle(Pong.enemyPaddleColor, game.world.width - Pong.paddlePadding);
+        clientPaddle = addPaddle(Config.clientPaddleColor, Config.paddlePadding);
+        enemyPaddle = addPaddle(Config.enemyPaddleColor, game.world.width - Config.paddlePadding);
     }else{
         // Client paddle is on the right
-        clientPaddle = addPaddle(Pong.clientPaddleColor, game.world.width - Pong.paddlePadding);
-        enemyPaddle = addPaddle(Pong.enemyPaddleColor, Pong.paddlePadding);
+        clientPaddle = addPaddle(Config.clientPaddleColor, game.world.width - Config.paddlePadding);
+        enemyPaddle = addPaddle(Config.enemyPaddleColor, Config.paddlePadding);
     }
 }
 
 function addPaddle(color, position){
-    paddleGraphics = createPaddleGraphics(color, Pong.paddleSize);
+    paddleGraphics = createPaddleGraphics(color, Config.paddleSize);
     paddleSprite = game.add.sprite(position, game.world.centerY, paddleGraphics.generateTexture());
     paddleGraphics.destroy();
     game.physics.enable(paddleSprite, Phaser.Physics.ARCADE);
@@ -174,7 +150,7 @@ function addPaddle(color, position){
 }
 
 function addBall(){
-    var ballGraphics = createCircleGraphcis(Pong.ballRadius);
+    var ballGraphics = createCircleGraphcis(Config.ballRadius);
     ball = game.add.sprite(game.world.centerX, game.world.centerY, ballGraphics.generateTexture());
     ballGraphics.destroy();
     ball.anchor.set(0.5, 0.5);
@@ -186,12 +162,21 @@ function addBall(){
 }
 
 function sendPaddleData(position){
-    socket.emit('positionUpdate', {'user':user, 'position':position});
+    game.socket.emit('positionUpdate', {'user':user, 'position':position});
+}
+
+function sendReadyToServer(){
+    game.socket.emit('ready');
+}
+
+function onReadyFromServer(){
+    game.socket.on('start', function(){
+         ball.body.velocity.setTo(startingBallDirection.x * Config.initialBallSpeed, startingBallDirection.y * Config.initialBallSpeed);
+    });
 }
 
 function receivePaddleData(){
-    socket.on('positionUpdate', function(position){
-        console.log('positionUpdate');
+    game.socket.on('positionUpdate', function(position){
         newEnemyPaddlePosition = position;
     });
 }
