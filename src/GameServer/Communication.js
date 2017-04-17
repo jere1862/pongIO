@@ -1,8 +1,16 @@
 var Communication = function(){
 }
 
+//Todo make on... same as toClient
+
 Communication.prototype.onPositionUpdate = function(socket, callback){
     socket.on('positionUpdate', function(clientData){
+        callback(clientData);
+    });
+}
+
+Communication.prototype.onBallPositionUpdate = function(socket, callback){
+    socket.on('ballPositionUpdate', function(clientData){
         callback(clientData);
     });
 }

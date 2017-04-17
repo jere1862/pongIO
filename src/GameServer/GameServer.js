@@ -3,12 +3,14 @@ var RoomHandler = require('./RoomHandler');
 var Communication = require('./Communication');
 
 users = [];
+var roomHandler;
 
 var User = function(userId, roomId = 0){
     this.id = userId;
     this.number = 0;
     this.room = roomId;
     this.ready = false;
+    this.lastBallPosition;
 
     this.setNumber = function(number){
       this.number = number;
@@ -21,7 +23,7 @@ exports.User = User;
 exports.start = function(io){
   initiateConnectonToClient(io, function(socket){
     Communication.onPositionUpdate(socket, function(clientData){
-      var otherPlayer = getOtherPlayer(clientData.user.room, clientData.user.number);
+      var otherPlayer = getOtherPlayer(clientData.user);
       if(typeof otherPlayer != 'undefined'){
         var message = {
           'name': 'positionUpdate',
@@ -49,10 +51,13 @@ function initiateConnectonToClient(io, callback){
             'name': 'creationResponse',
             'content': {'user':user, 'startingBallDirection': startingDirection}
           }
+          onBallPosition(socket, room, function(data){
+            setBallPosition(user);
+          });
           Communication.toClient(socket.id, message)
           Communication.onReady(socket, function(){
             user.ready = true;
-            var otherPlayer = getOtherPlayer(room.id, user.number);
+            var otherPlayer = getOtherPlayer(user);
             if(typeof otherPlayer != 'undefined'){
               if(otherPlayer.ready){
                 startGame(user.id);
@@ -65,12 +70,17 @@ function initiateConnectonToClient(io, callback){
   });
 }
 
-function getUserFromId(id, room, callback){
+function getUserFromId(id, room){
   return _.findWhere(room.users, {id: id});
 }
 
-function getOtherPlayer(roomId, playerNumber, callback){
-  return _.find(users, user => user.room === roomId && user.number !== playerNumber);
+// TODO: Change to only look in a given user's room
+function getOtherPlayer(user){
+  var room = _.findWhere(roomHandler.rooms, {id: user.room});
+  if(room.spaceRemaining()){
+    return undefined;
+  }
+  return _.find(room.users, u => u.number !== user.number);
 } 
 
 // TODO: make something reusable for when ball is reset
@@ -92,4 +102,37 @@ function startGame(userId){
     "name": "start" 
   }
   Communication.toClient(userId, message);
+}
+
+function onBallPosition(socket, room, callback){
+  Communication.onBallPositionUpdate(socket, function(ballPosition){
+    var user = getUserFromId(socket.id, room);
+    user.lastBallPosition = ballPosition;
+    callback(ballPosition);
+  });
+}
+
+function setBallPosition(user){
+  var otherPlayer = getOtherPlayer(user);
+  if(typeof user == 'undefined' || typeof otherPlayer == 'undefined'){
+    return;
+  }
+  if(typeof otherPlayer.lastBallPosition != 'undefined' && typeof user.lastBallPosition != 'undefined'){
+    var player1;
+    var player2;
+    if(user.number == 1){
+      player1 = user;
+      player2 = otherPlayer;
+    }else{
+      player1 = otherPlayer;
+      player2 = user;
+    }
+    var nextPos = {'x': player1.lastBallPosition.x, 'y': player1.lastBallPosition.y};
+    // Send this separately
+    var message = {
+      "name": "ballPositionUpdate",
+      "content": nextPos
+    }
+    Communication.toClient(player2.id, message);
+  }
 }

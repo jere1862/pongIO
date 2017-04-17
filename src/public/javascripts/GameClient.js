@@ -14,10 +14,12 @@ var clientPaddle;
 var enemyPaddle;
 var newEnemyPaddlePosition;
 var oldClientPaddlePosition;
+var nextBallPosition;
 var startingBallDirection;
 var ball;
 var wasd;
 var keys;
+var tweenA;
 
 var user;
 
@@ -49,6 +51,7 @@ Pong.Game.prototype = {
         createPaddles();
         newEnemyPaddlePosition = game.world.centerY;
         receivePaddleData();
+        receiveBallData();
         addRoomNumber(user.room);
         game.socket.on('positionUpdate', function(position){
             newEnemyPaddlePosition = position;
@@ -72,10 +75,20 @@ Pong.Game.prototype = {
             game.physics.arcade.collide(clientPaddle, ball);
             game.physics.arcade.collide(enemyPaddle, ball); 
 
-            if(oldClientPaddlePosition != clientPaddle.body.position.y){
-            oldClientPaddlePosition = clientPaddle.body.position.y;
-            sendPaddleData(clientPaddle.body.position.y);
+            if(typeof nextBallPosition != 'undefined'){
+                if(typeof tweenA != 'undefined'){
+                    //tweenA.stop();
+                }
+                tweenA = game.add.tween(ball).to( nextBallPosition, 200, "Quart.easeOut");
+                tweenA.start();
+                //ball.body.position = nextBallPosition;
             }
+
+            if(oldClientPaddlePosition != clientPaddle.body.position.y){
+                oldClientPaddlePosition = clientPaddle.body.position.y;
+                sendPaddleData(clientPaddle.body.position.y);
+            }
+            sendBallPositionUpdate();
     }
 
 }
@@ -178,6 +191,17 @@ function onReadyFromServer(){
 function receivePaddleData(){
     game.socket.on('positionUpdate', function(position){
         newEnemyPaddlePosition = position;
+    });
+}
+
+function sendBallPositionUpdate(){
+    game.socket.emit('ballPositionUpdate', ball.body.position);
+}
+
+function receiveBallData(){
+    game.socket.on('ballPositionUpdate', function(pos){
+        console.log('pos');
+        nextBallPosition = pos;
     });
 }
 
