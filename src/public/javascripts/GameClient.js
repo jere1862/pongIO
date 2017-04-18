@@ -79,9 +79,12 @@ Pong.Game.prototype = {
                 if(typeof tweenA != 'undefined'){
                     //tweenA.stop();
                 }
-                tweenA = game.add.tween(ball).to( nextBallPosition, 200, "Quart.easeOut");
-                tweenA.start();
-                //ball.body.position = nextBallPosition;
+                game.physics.arcade.moveToXY(
+                    ball,
+                    nextBallPosition,
+                    15
+                )
+                ball.body.position = nextBallPosition;
             }
 
             if(oldClientPaddlePosition != clientPaddle.body.position.y){
@@ -200,7 +203,6 @@ function sendBallPositionUpdate(){
 
 function receiveBallData(){
     game.socket.on('ballPositionUpdate', function(pos){
-        console.log('pos');
         nextBallPosition = pos;
     });
 }
