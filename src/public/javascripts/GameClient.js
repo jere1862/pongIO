@@ -24,8 +24,6 @@ var tweenA;
 
 var leftText;
 var rightText;
-var scoreLeft;
-var scoreRight;
 
 var user;
 
@@ -62,6 +60,8 @@ Pong.Game.prototype = {
         newEnemyPaddlePosition = game.world.centerY;
         receivePaddleData();
         receiveBallData();
+        onScoreUpdate();
+        onBallStart();
         addRoomNumber(user.room);
         game.socket.on('positionUpdate', function(position){
             newEnemyPaddlePosition = position;
@@ -81,7 +81,6 @@ Pong.Game.prototype = {
             enemyPaddle.body.position.y = newEnemyPaddlePosition;
             checkKeyInputs();
             verifyMaxBallSpeed();
-            verifyBallPosition();
 
             game.physics.arcade.collide(clientPaddle, ball);
             game.physics.arcade.collide(enemyPaddle, ball); 
@@ -230,35 +229,22 @@ function receiveBallData(){
     });
 }
 
-function verifyBallPosition(){
-    //fetchBallDirection();
-
-    if(ball.body.position.x > game.world.width){
-        resetBall();
-        leftText.text = ++scoreLeft;
-    }else if(ball.body.position.x < 0){
-        resetBall();
-        rightText.text = ++scoreRight;
-    }
-
-    //Todo sync this shit up
-}
 function leftScore(){
     var style = { font: "bold 40px Arial", fill: "#fff" , boundsAlignH: "center", boundsAlignV: "middle" };
 
     //  The Text is positioned at 0, 100
-    text = game.add.text(0, 0, 0, style);
+    var text = game.add.text(0, 0, 0, style);
     text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
 
     //  We'll set the bounds to be from x0, y100 and be 800px wide by 100px high
     return text.setTextBounds(-30, 10, 800, 100);
 }
 
-function rightScore(){
+function rightScore(){  
     var style = { font: "bold 40px Arial", fill: "#fff" , boundsAlignH: "center", boundsAlignV: "middle" };
 
     //  The Text is positioned at 0, 100
-    text = game.add.text(0, 0, 0, style);
+    var text = game.add.text(0, 0, 0, style);
     text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
 
     //  We'll set the bounds to be from x0, y100 and be 800px wide by 100px high
@@ -268,4 +254,20 @@ function rightScore(){
 function resetBall(){
     ball.destroy();
     addBall();
+}
+
+function onScoreUpdate(callback){
+    game.socket.on('scoreUpdate', function(message){
+        resetBall();
+        leftText.text = message.player1;
+        rightText.text = message.player2;
+    });
+}
+
+function onBallStart(callback){
+    game.socket.on('ballStart', function(serverData){
+        console.log('allo');
+        var startingBallDirection = serverData.startingBallDirection;
+        ball.body.velocity.setTo(startingBallDirection.x * Config.initialBallSpeed, startingBallDirection.y * Config.initialBallSpeed);
+    });
 }

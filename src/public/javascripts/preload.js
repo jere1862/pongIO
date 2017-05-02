@@ -14,9 +14,9 @@ Pong.Preloader.prototype = {
         game.status.fontWeight = 'normal';
         game.stage.backgroundColor = '#87CEEB';
         
-        
+
         game.socket = io();
-        game.socket.on('creationResponse', function(serverData){
+        game.socket.on('ballStart', function(serverData){
             if(typeof game.user == 'undefined'){
                 game.user = serverData.user;
                 game.startingBallDirection = serverData.startingBallDirection;
@@ -26,7 +26,6 @@ Pong.Preloader.prototype = {
                 ready = true;
             }
         });
-        
     },
 
     update: function(){

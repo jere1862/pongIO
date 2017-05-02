@@ -4,6 +4,8 @@ var Communication = require('./Communication');
 
 users = [];
 var roomHandler;
+var width = 800;
+var height = 600;
 
 var User = function(userId, roomId = 0){
     this.id = userId;
@@ -11,6 +13,7 @@ var User = function(userId, roomId = 0){
     this.room = roomId;
     this.ready = false;
     this.lastBallPosition;
+    this.score = 0;
 
     this.setNumber = function(number){
       this.number = number;
@@ -43,18 +46,11 @@ function initiateConnectonToClient(io, callback){
           user.setNumber(room.users.length);
           user.room = room.id;
           users.push(user);
-          startingDirection = {
-            'x': 20, 
-            'y': 20
-          }
-          var message = {
-            'name': 'creationResponse',
-            'content': {'user':user, 'startingBallDirection': startingDirection}
-          }
+          startBall(user);
           onBallPosition(socket, room, function(data){
             setBallPosition(user);
+            verifyBallPosition(user);
           });
-          Communication.toClient(socket.id, message)
           Communication.onReady(socket, function(){
             user.ready = true;
             var otherPlayer = getOtherPlayer(user);
@@ -135,4 +131,58 @@ function setBallPosition(user){
     }
     Communication.toClient(player2.id, message);
   }
+}
+
+function verifyBallPosition(user){
+    var otherPlayer = getOtherPlayer(user);
+    if(typeof user == 'undefined' || typeof otherPlayer == 'undefined'){
+      return;
+    }
+    if(typeof otherPlayer.lastBallPosition != 'undefined' && typeof user.lastBallPosition != 'undefined'){
+      var player1;
+      var player2;
+      if(user.number == 1){
+        player1 = user;
+        player2 = otherPlayer;
+      }else{
+        player1 = otherPlayer;
+        player2 = user;
+      }
+      if(user.lastBallPosition.x > width){
+        updateScore(player1, player2);
+        player1.score++; 
+        setTimeout(function(){
+          startBall(player1)
+        }, 1000);
+      }
+      if(user.lastBallPosition.x < 0){
+        updateScore(player1, player2);
+        player2.score++;
+        setTimeout(function(){
+          startBall(player1)
+        }, 1000);
+      }
+    }
+}
+
+function updateScore(player1, player2){
+  var message = {
+    "name": "scoreUpdate",
+    "content": {
+      "player1": player1.score, 
+      "player2": player2.score
+    }
+  }
+  Communication.toClient(player1.id, message);
+  Communication.toClient(player2.id, message);
+}
+
+function startBall(user){
+    createRandomBallDirection(function(pos){
+        var message = {
+          'name': 'ballStart',
+          'content': {'user':user, 'startingBallDirection': pos}
+        }
+        Communication.toClient(user.id, message)
+    });
 }
