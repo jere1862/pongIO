@@ -4,6 +4,7 @@ var Config = {
     initialBallSpeed: 600,
     clientPaddleColor: 0xBAEBAE,
     enemyPaddleColor: 0xF6546A,
+    worldBoundColor: 0x000000,
     ballColor: 0xFFFFFF,
     paddleSize: {'x': 20, 'y': 80},
     ballRadius: 15,
@@ -21,6 +22,11 @@ var wasd;
 var keys;
 var tweenA;
 
+var leftText;
+var rightText;
+var scoreLeft;
+var scoreRight;
+
 var user;
 
 Pong.Game = function(game){
@@ -34,7 +40,7 @@ Pong.Game.prototype = {
         roomNumber = game.roomNumber;
     },
 
-    // Called after preload
+    // Called after preload 
     create: function(){
         // Create some text in the middle of the game area
         //game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
@@ -46,8 +52,12 @@ Pong.Game.prototype = {
 
         //Add game objects to the scene
         addBall();
-        //var scoreText
-        //scoreText = score();
+        addWorldBounds();
+        leftText = leftScore();
+        rightText= rightScore();
+        scoreLeft = 0;
+        scoreRight = 0;
+
         createPaddles();
         newEnemyPaddlePosition = game.world.centerY;
         receivePaddleData();
@@ -57,7 +67,7 @@ Pong.Game.prototype = {
             newEnemyPaddlePosition = position;
         });
 
-        // Add keyboard inpugs
+        // Add keyboard inputs
         keys = game.input.keyboard.createCursorKeys();
         wasd = game.input.keyboard.addKeys( { 'up': Phaser.KeyCode.W, 'down': Phaser.KeyCode.S, 'left': Phaser.KeyCode.A, 'right': Phaser.KeyCode.D } );
 
@@ -71,14 +81,14 @@ Pong.Game.prototype = {
             enemyPaddle.body.position.y = newEnemyPaddlePosition;
             checkKeyInputs();
             verifyMaxBallSpeed();
+            verifyBallPosition();
 
             game.physics.arcade.collide(clientPaddle, ball);
             game.physics.arcade.collide(enemyPaddle, ball); 
+            game.physics.arcade.collide(ball, upperBound);
+            game.physics.arcade.collide(ball, lowerBound);
 
             if(typeof nextBallPosition != 'undefined'){
-                if(typeof tweenA != 'undefined'){
-                    //tweenA.stop();
-                }
                 game.physics.arcade.moveToXY(
                     ball,
                     nextBallPosition,
@@ -173,8 +183,21 @@ function addBall(){
 
     // Add physics to ball 
     game.physics.enable(ball, Phaser.Physics.ARCADE);
-    ball.body.collideWorldBounds = true;
+    ball.body.collideWorldBounds = false;
     ball.body.bounce.set(1.05, 1.05);
+}
+
+function addWorldBounds(){
+    boundGraphics = createPaddleGraphics(Config.worldBoundColor, {'x': game.world.width, 'y': 20});
+    upperBound = game.add.sprite(0, -20, boundGraphics.generateTexture());
+    lowerBound = game.add.sprite(0, game.world.height, boundGraphics.generateTexture());
+    boundGraphics.destroy();
+
+    game.physics.enable(upperBound, Phaser.Physics.ARCADE);
+    game.physics.enable(lowerBound, Phaser.Physics.ARCADE);
+    
+    lowerBound.body.immovable = true;
+    upperBound.body.immovable = true;
 }
 
 function sendPaddleData(position){
@@ -207,21 +230,42 @@ function receiveBallData(){
     });
 }
 
-// function playerScored){
-// //if ball touch right wall
-	// //+1 to left player 
-// //if  ball touch left wall	
-	// //+1 to right player 
-	// if(ball.body)	
-// }
+function verifyBallPosition(){
+    //fetchBallDirection();
 
-function score(score){
+    if(ball.body.position.x > game.world.width){
+        resetBall();
+        leftText.text = ++scoreLeft;
+    }else if(ball.body.position.x < 0){
+        resetBall();
+        rightText.text = ++scoreRight;
+    }
+
+    //Todo sync this shit up
+}
+function leftScore(){
     var style = { font: "bold 40px Arial", fill: "#fff" , boundsAlignH: "center", boundsAlignV: "middle" };
 
     //  The Text is positioned at 0, 100
-    text = game.add.text(0, 0, score, style);
+    text = game.add.text(0, 0, 0, style);
     text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
 
     //  We'll set the bounds to be from x0, y100 and be 800px wide by 100px high
-    text.setTextBounds(0, 10, 800, 100);
+    return text.setTextBounds(-30, 10, 800, 100);
+}
+
+function rightScore(){
+    var style = { font: "bold 40px Arial", fill: "#fff" , boundsAlignH: "center", boundsAlignV: "middle" };
+
+    //  The Text is positioned at 0, 100
+    text = game.add.text(0, 0, 0, style);
+    text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
+
+    //  We'll set the bounds to be from x0, y100 and be 800px wide by 100px high
+    return text.setTextBounds(30, 10, 800, 100);
+}
+
+function resetBall(){
+    ball.destroy();
+    addBall();
 }
