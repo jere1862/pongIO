@@ -62,7 +62,8 @@ Pong.Game.prototype = {
         receiveBallData();
         onScoreUpdate();
         onBallStart();
-        addRoomNumber(user.room);
+        // For debugging purposes
+        //addRoomNumber(user.room);
         game.socket.on('positionUpdate', function(position){
             newEnemyPaddlePosition = position;
         });
@@ -230,25 +231,25 @@ function receiveBallData(){
 }
 
 function leftScore(){
-    var style = { font: "bold 40px Arial", fill: "#fff" , boundsAlignH: "center", boundsAlignV: "middle" };
+    var style = { font: "bold 80px Arial", fill: "#fff" , boundsAlignH: "center", boundsAlignV: "middle" };
 
     //  The Text is positioned at 0, 100
     var text = game.add.text(0, 0, 0, style);
     text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
 
     //  We'll set the bounds to be from x0, y100 and be 800px wide by 100px high
-    return text.setTextBounds(-30, 10, 800, 100);
+    return text.setTextBounds(-70, 50, 800, 100);
 }
 
 function rightScore(){  
-    var style = { font: "bold 40px Arial", fill: "#fff" , boundsAlignH: "center", boundsAlignV: "middle" };
+    var style = { font: "bold 80px Arial", fill: "#fff" , boundsAlignH: "center", boundsAlignV: "middle" };
 
     //  The Text is positioned at 0, 100
     var text = game.add.text(0, 0, 0, style);
     text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
 
     //  We'll set the bounds to be from x0, y100 and be 800px wide by 100px high
-    return text.setTextBounds(30, 10, 800, 100);
+    return text.setTextBounds(70, 50, 800, 100);
 }
 
 function resetBall(){
@@ -258,6 +259,7 @@ function resetBall(){
 
 function onScoreUpdate(callback){
     game.socket.on('scoreUpdate', function(message){
+        console.log("Score update");
         resetBall();
         leftText.text = message.player1;
         rightText.text = message.player2;
@@ -266,7 +268,6 @@ function onScoreUpdate(callback){
 
 function onBallStart(callback){
     game.socket.on('ballStart', function(serverData){
-        console.log('allo');
         var startingBallDirection = serverData.startingBallDirection;
         ball.body.velocity.setTo(startingBallDirection.x * Config.initialBallSpeed, startingBallDirection.y * Config.initialBallSpeed);
     });

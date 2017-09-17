@@ -6,6 +6,7 @@ users = [];
 var roomHandler;
 var width = 800;
 var height = 600;
+var lastUpdateTimestamp = Date.now() - 10000;
 
 var User = function(userId, roomId = 0){
     this.id = userId;
@@ -138,6 +139,12 @@ function verifyBallPosition(user){
     if(typeof user == 'undefined' || typeof otherPlayer == 'undefined'){
       return;
     }
+    
+    // If a user has scored recently, disregard
+    if(Date.now() - lastUpdateTimestamp < 1000){
+      return;
+    } 
+    
     if(typeof otherPlayer.lastBallPosition != 'undefined' && typeof user.lastBallPosition != 'undefined'){
       var player1;
       var player2;
@@ -149,19 +156,20 @@ function verifyBallPosition(user){
         player2 = user;
       }
       if(user.lastBallPosition.x > width){
-        updateScore(player1, player2);
         player1.score++; 
+        updateScore(player1, player2);
         setTimeout(function(){
           startBall(player1)
         }, 1000);
       }
       if(user.lastBallPosition.x < 0){
-        updateScore(player1, player2);
         player2.score++;
+        updateScore(player1, player2);
         setTimeout(function(){
           startBall(player1)
         }, 1000);
       }
+      lastUpdateTimestamp = Date.now();
     }
 }
 
@@ -175,6 +183,7 @@ function updateScore(player1, player2){
   }
   Communication.toClient(player1.id, message);
   Communication.toClient(player2.id, message);
+  
 }
 
 function startBall(user){
