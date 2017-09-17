@@ -1,7 +1,7 @@
 var Config = {
     paddleSpeed: 700,
     maxBallVelocity: 1000,
-    initialBallSpeed: 600,
+    initialBallSpeed: 300,
     clientPaddleColor: 0xBAEBAE,
     enemyPaddleColor: 0xF6546A,
     worldBoundColor: 0x000000,
