@@ -3,9 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node ./src/bin/www",
+    "restart": "pm2 startOrRestart ecosystem.config.js",
+    "deploy": "pm2 deploy ecosystem.config.js production",
     "test": "mocha",
-    "cover": "istanbul cover mocha Tests  "
+    "cover": "istanbul cover mocha Tests"
   },
   "dependencies": {
     "body-parser": "~1.16.0",
@@ -13,6 +14,7 @@
     "debug": "~2.6.0",
     "express": "~4.14.1",
     "morgan": "~1.7.0",
+    "pm2": "^2.7.0",
     "pug": "~2.0.0-beta10",
     "serve-favicon": "~2.3.2"
   }
