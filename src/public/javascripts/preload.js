@@ -13,7 +13,12 @@ Pong.Preloader.prototype = {
         game.status.anchor.setTo(0.5);
         game.status.fontWeight = 'normal';
         game.stage.backgroundColor = '#87CEEB';
-        
+
+        game.load.audio('loseMusic', "../Resources/lose-music.wav");
+        game.load.audio('winMusic', "../Resources/win-music.wav");
+        game.load.audio('enemyScoredSound', "../Resources/enemy-scored.wav");
+        game.load.audio('scoredSound', "../Resources/scored.wav");
+        game.load.audio('ballHitSound', "../Resources/ball-hit.wav");
 
         game.socket = io();
         game.socket.on('ballStart', function(serverData){

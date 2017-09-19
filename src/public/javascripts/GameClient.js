@@ -21,9 +21,19 @@ var ball;
 var wasd;
 var keys;
 var tweenA;
+var over = false;
 
+var loseMusic;
+var winMusic;
+var enemyScoredSound;
+var scoredSound;
+var ballHitSound;
+
+// Score texts
 var leftText;
 var rightText;
+
+var searchingForGameText;
 
 var user;
 
@@ -40,7 +50,6 @@ Pong.Game.prototype = {
 
     // Called after preload 
     create: function(){
-        // Create some text in the middle of the game area
         //game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
         game.scale.pageAlignHorizontally = true;
         game.scale.pageAlignVertically = true;
@@ -62,8 +71,20 @@ Pong.Game.prototype = {
         receiveBallData();
         onScoreUpdate();
         onBallStart();
-        // For debugging purposes
-        //addRoomNumber(user.room);
+        onScored();
+        onEnemyScored();
+        onLose();
+        onWin();
+
+        // Add sounds
+        loseMusic = game.add.audio('loseMusic');
+        winMusic =  game.add.audio('winMusic');
+        enemyScoredSound = game.add.audio('enemyScoredSound', 0.2);
+        scoredSound = game.add.audio('scoredSound', 0.2);
+        ballHitSound = game.add.audio('ballHitSound');
+
+        game.sound.volume = 0.1;
+
         game.socket.on('positionUpdate', function(position){
             newEnemyPaddlePosition = position;
         });
@@ -72,22 +93,33 @@ Pong.Game.prototype = {
         keys = game.input.keyboard.createCursorKeys();
         wasd = game.input.keyboard.addKeys( { 'up': Phaser.KeyCode.W, 'down': Phaser.KeyCode.S, 'left': Phaser.KeyCode.A, 'right': Phaser.KeyCode.D } );
 
-        onReadyFromServer();
+        searchingForGameText = addText("Searching for game...")
+
+
         sendReadyToServer();
-        onWinUpdate();
+        onReadyFromServer(() => {
+            game.paused = true;
+            searchingForGameText.setText("Found game \n Get ready!", );
+            setTimeout(() =>{
+                searchingForGameText.destroy();
+                game.paused = false;
+            },
+            3000);
+        });
     },
 
     // Called each frame
     update: function(){
+        if(!over){
             clientPaddle.body.velocity.y = 0;
             enemyPaddle.body.position.y = newEnemyPaddlePosition;
             checkKeyInputs();
             verifyMaxBallSpeed();
 
-            game.physics.arcade.collide(clientPaddle, ball);
-            game.physics.arcade.collide(enemyPaddle, ball); 
-            game.physics.arcade.collide(ball, upperBound);
-            game.physics.arcade.collide(ball, lowerBound);
+            game.physics.arcade.collide(clientPaddle, ball, () => ballHitSound.play());
+            game.physics.arcade.collide(enemyPaddle, ball, () => ballHitSound.play()); 
+            game.physics.arcade.collide(ball, upperBound, () => ballHitSound.play());
+            game.physics.arcade.collide(ball, lowerBound, () => ballHitSound.play());
 
             if(typeof nextBallPosition != 'undefined'){
                 game.physics.arcade.moveToXY(
@@ -103,8 +135,8 @@ Pong.Game.prototype = {
                 sendPaddleData(clientPaddle.body.position.y);
             }
             sendBallPositionUpdate();
+        }
     }
-
 }
 
 function checkKeyInputs(){
@@ -133,7 +165,8 @@ function addText(text){
     text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
 
     //  We'll set the bounds to be from x0, y100 and be 800px wide by 100px high
-    text.setTextBounds(0, 400, 800, 100);
+    text.setTextBounds(0, 300, 800, 100);
+    return text;
 }
 
 function createPaddleGraphics(color, size){
@@ -209,9 +242,10 @@ function sendReadyToServer(){
     game.socket.emit('ready');
 }
 
-function onReadyFromServer(){
+function onReadyFromServer(callback){
     game.socket.on('start', function(){
          ball.body.velocity.setTo(startingBallDirection.x * Config.initialBallSpeed, startingBallDirection.y * Config.initialBallSpeed);
+         callback();
     });
 }
 
@@ -273,16 +307,33 @@ function onBallStart(callback){
     });
 }
 
-function onWinUpdate(){
-    game.socket.on('winUpdate', function(serverData){
-        game.paused = true;
-        if(serverData.winner === 1){
-            leftText.text = 10;
-            addText("Winner: Player "+1);
-        }
-        if(serverData.winner === 2){
-            rightText.text = 10;
-            addText("Winner: Player "+2);
-        }
+// TODO: HANDLE SOUNDS CLIENT SIDE
+function onScored(){
+    game.socket.on('scored', function(){
+        scoredSound.play();
+    });
+}
+
+function onEnemyScored(){
+    game.socket.on('enemyScored', function(){
+        enemyScoredSound.play();
+    });
+}
+
+function onLose(){
+    game.socket.on('lose', function(){
+        addText("You lose...");
+        ball.destroy();
+        over = true;
+        loseMusic.play();
+    });
+}
+
+function onWin(){
+    game.socket.on('win', function(){
+        addText("You win!");
+        ball.destroy();
+        over = true;
+        winMusic.play();
     });
 }

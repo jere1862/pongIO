@@ -81,7 +81,6 @@ function getOtherPlayer(user){
 } 
 
 // TODO: make something reusable for when ball is reset
-// TODO: Check periodically to sync ball position
 function createRandomBallDirection(callback){
     xDirection = Math.random() - 0.5;
     yDirection=  (Math.random() * (1 - 0.2) + 0.2);   
@@ -157,6 +156,8 @@ function verifyBallPosition(user){
       }
       if(user.lastBallPosition.x > width){
         player1.score++; 
+        Communication.toClient(player1.id, {"name": "scored"});
+        Communication.toClient(player2.id, {"name": "enemyScored"});
         updateScore(player1, player2);
         setTimeout(function(){
           startBall(player1)
@@ -164,6 +165,8 @@ function verifyBallPosition(user){
       }
       if(user.lastBallPosition.x < 0){
         player2.score++;
+        Communication.toClient(player1.id, {"name": "enemyScored"});
+        Communication.toClient(player2.id, {"name": "scored"});
         updateScore(player1, player2);
         setTimeout(function(){
           startBall(player1)
@@ -175,24 +178,12 @@ function verifyBallPosition(user){
 
 function updateScore(player1, player2){
   if(player1.score === 10){
-    var message = {
-      "name": "winUpdate",
-      "content": {
-        "winner": 1
-      }
-    }
-    Communication.toClient(player1.id, message);
-    Communication.toClient(player2.id, message);
+    Communication.toClient(player1.id, {"name": "win"});
+    Communication.toClient(player2.id, {"name": "lose"});
     return;
   }else if(player2.score === 10){
-    var message = {
-      "name": "winUpdate",
-      "content": {
-        "winner": 2
-      }
-    }
-    Communication.toClient(player1.id, message);
-    Communication.toClient(player2.id, message);
+    Communication.toClient(player1.id, {"name": "lose"});
+    Communication.toClient(player2.id, {"name": "win"});
     return;
   }
   var message = {
@@ -204,7 +195,6 @@ function updateScore(player1, player2){
   }
   Communication.toClient(player1.id, message);
   Communication.toClient(player2.id, message);
-  
 }
 
 function startBall(user){
