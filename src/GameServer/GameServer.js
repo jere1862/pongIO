@@ -174,6 +174,27 @@ function verifyBallPosition(user){
 }
 
 function updateScore(player1, player2){
+  if(player1.score === 10){
+    var message = {
+      "name": "winUpdate",
+      "content": {
+        "winner": 1
+      }
+    }
+    Communication.toClient(player1.id, message);
+    Communication.toClient(player2.id, message);
+    return;
+  }else if(player2.score === 10){
+    var message = {
+      "name": "winUpdate",
+      "content": {
+        "winner": 2
+      }
+    }
+    Communication.toClient(player1.id, message);
+    Communication.toClient(player2.id, message);
+    return;
+  }
   var message = {
     "name": "scoreUpdate",
     "content": {

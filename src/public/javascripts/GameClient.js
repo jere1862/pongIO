@@ -74,6 +74,7 @@ Pong.Game.prototype = {
 
         onReadyFromServer();
         sendReadyToServer();
+        onWinUpdate();
     },
 
     // Called each frame
@@ -124,15 +125,15 @@ function verifyMaxBallSpeed(){
     }
 }
 
-function addRoomNumber(roomNumber){
+function addText(text){
     var style = { font: "bold 32px Arial", fill: "#fff", boundsAlignH: "center", boundsAlignV: "middle" };
 
     //  The Text is positioned at 0, 100
-    var text = game.add.text(0, 0, "Room: "+roomNumber, style);
+    var text = game.add.text(0, 0, text, style);
     text.setShadow(3, 3, 'rgba(0,0,0,0.5)', 2);
 
     //  We'll set the bounds to be from x0, y100 and be 800px wide by 100px high
-    text.setTextBounds(0, 40, 800, 100);
+    text.setTextBounds(0, 400, 800, 100);
 }
 
 function createPaddleGraphics(color, size){
@@ -259,7 +260,6 @@ function resetBall(){
 
 function onScoreUpdate(callback){
     game.socket.on('scoreUpdate', function(message){
-        console.log("Score update");
         resetBall();
         leftText.text = message.player1;
         rightText.text = message.player2;
@@ -270,5 +270,19 @@ function onBallStart(callback){
     game.socket.on('ballStart', function(serverData){
         var startingBallDirection = serverData.startingBallDirection;
         ball.body.velocity.setTo(startingBallDirection.x * Config.initialBallSpeed, startingBallDirection.y * Config.initialBallSpeed);
+    });
+}
+
+function onWinUpdate(){
+    game.socket.on('winUpdate', function(serverData){
+        game.paused = true;
+        if(serverData.winner === 1){
+            leftText.text = 10;
+            addText("Winner: Player "+1);
+        }
+        if(serverData.winner === 2){
+            rightText.text = 10;
+            addText("Winner: Player "+2);
+        }
     });
 }
