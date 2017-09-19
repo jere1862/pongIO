@@ -10,7 +10,7 @@ module.exports = {
       key: '../pongio-keypair.pem',
       ref: 'origin/master',
       repo: 'git@github.com:jere1862/pongIO.git',
-      path: '/home/ubuntu/PongIO',
+      path: '/home/ubuntu/pongIO',
       'post-deploy': 'npm install && pm2 startOrRestart ecosystem.config.js'
     }
   }

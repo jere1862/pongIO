@@ -1,5 +1,5 @@
 var Config = {
-    paddleSpeed: 700,
+    paddleSpeed: 450,
     maxBallVelocity: 1000,
     initialBallSpeed: 300,
     clientPaddleColor: 0xBAEBAE,
