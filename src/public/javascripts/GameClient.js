@@ -21,7 +21,10 @@ var ball;
 var wasd;
 var keys;
 var tweenA;
+
+// Pseudo game states
 var over = false;
+var idle = false;
 
 var loseMusic;
 var winMusic;
@@ -32,6 +35,7 @@ var ballHitSound;
 // Score texts
 var leftText;
 var rightText;
+var restartText;
 
 var searchingForGameText;
 
@@ -71,8 +75,6 @@ Pong.Game.prototype = {
         receiveBallData();
         onScoreUpdate();
         onBallStart();
-        onScored();
-        onEnemyScored();
         onLose();
         onWin();
 
@@ -135,6 +137,7 @@ Pong.Game.prototype = {
                 sendPaddleData(clientPaddle.body.position.y);
             }
             sendBallPositionUpdate();
+            checkBoundaries();
         }
     }
 }
@@ -297,43 +300,77 @@ function onScoreUpdate(callback){
         resetBall();
         leftText.text = message.player1;
         rightText.text = message.player2;
+        idle = false;
     });
 }
 
 function onBallStart(callback){
     game.socket.on('ballStart', function(serverData){
         var startingBallDirection = serverData.startingBallDirection;
-        ball.body.velocity.setTo(startingBallDirection.x * Config.initialBallSpeed, startingBallDirection.y * Config.initialBallSpeed);
-    });
-}
-
-// TODO: HANDLE SOUNDS CLIENT SIDE
-function onScored(){
-    game.socket.on('scored', function(){
-        scoredSound.play();
-    });
-}
-
-function onEnemyScored(){
-    game.socket.on('enemyScored', function(){
-        enemyScoredSound.play();
+        if(ball.alive){
+            ball.body.velocity.setTo(startingBallDirection.x * Config.initialBallSpeed, startingBallDirection.y * Config.initialBallSpeed);
+        }
     });
 }
 
 function onLose(){
     game.socket.on('lose', function(){
         addText("You lose...");
-        ball.destroy();
+        if(user.number === 1){
+            rightText.setText(10);
+        }else{
+            leftText.setText(10);
+        }
         over = true;
+        ball.destroy();
         loseMusic.play();
+        onGameEnd();
     });
 }
 
 function onWin(){
     game.socket.on('win', function(){
         addText("You win!");
-        ball.destroy();
+        if(user.number === 1){
+            leftText.setText(10);
+        }else{
+            rightText.setText(10);
+        }
         over = true;
+        ball.destroy();
         winMusic.play();
+        onGameEnd();
     });
+}
+
+function checkBoundaries(){
+    if(ball.body.position.x > (game.world.width - ball.body.width)){
+        if(user.number === 1){
+            playOnce(scoredSound);
+        }else{
+            playOnce(enemyScoredSound);
+        }
+    }else if(ball.body.position.x < ball.width){
+        if(user.number === 1){
+            playOnce(enemyScoredSound);
+        }else{
+            playOnce(scoredSound);
+        }
+    }
+}
+
+function playOnce(sound){
+    if(!idle){
+        sound.play();
+        idle = true;
+    }
+}
+
+function onGameEnd(){
+    restartButton = game.add.button(game.width/2, 500, 'restartButton', onRestart, this, 2, 1, 0);
+    restartButton.anchor.setTo(0.5,0.5);
+}
+
+function onRestart(){
+    game.state.start("Preloader");
 }

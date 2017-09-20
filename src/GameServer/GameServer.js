@@ -156,8 +156,6 @@ function verifyBallPosition(user){
       }
       if(user.lastBallPosition.x > width){
         player1.score++; 
-        Communication.toClient(player1.id, {"name": "scored"});
-        Communication.toClient(player2.id, {"name": "enemyScored"});
         updateScore(player1, player2);
         setTimeout(function(){
           startBall(player1)
@@ -165,8 +163,6 @@ function verifyBallPosition(user){
       }
       if(user.lastBallPosition.x < 0){
         player2.score++;
-        Communication.toClient(player1.id, {"name": "enemyScored"});
-        Communication.toClient(player2.id, {"name": "scored"});
         updateScore(player1, player2);
         setTimeout(function(){
           startBall(player1)
@@ -177,7 +173,7 @@ function verifyBallPosition(user){
 }
 
 function updateScore(player1, player2){
-  if(player1.score === 10){
+  if(player1.score === 2){
     Communication.toClient(player1.id, {"name": "win"});
     Communication.toClient(player2.id, {"name": "lose"});
     return;

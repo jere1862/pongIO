@@ -20,6 +20,8 @@ Pong.Preloader.prototype = {
         game.load.audio('scoredSound', "../Resources/scored.wav");
         game.load.audio('ballHitSound', "../Resources/ball-hit.wav");
 
+        game.load.spritesheet('restartButton', "../Resources/RestartButton.png")
+
         game.socket = io();
         game.socket.on('ballStart', function(serverData){
             if(typeof game.user == 'undefined'){
