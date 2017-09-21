@@ -372,5 +372,6 @@ function onGameEnd(){
 }
 
 function onRestart(){
-    game.state.start("Preloader");
+    location.reload();
+    game.socket.emit('quit', {'user':user});
 }

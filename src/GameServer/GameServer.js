@@ -42,28 +42,14 @@ exports.start = function(io){
 function initiateConnectonToClient(io, callback){
   roomHandler = new RoomHandler(2);
   Communication.initiate(io, function(socket){
-        var user = new User(socket.id, 0);
-        roomHandler.findRoom(user, (room)=>{
-          user.setNumber(room.users.length);
-          user.room = room.id;
-          users.push(user);
-          startBall(user);
-          onBallPosition(socket, room, function(data){
-            setBallPosition(user);
-            verifyBallPosition(user);
-          });
-          Communication.onReady(socket, function(){
-            user.ready = true;
-            var otherPlayer = getOtherPlayer(user);
-            if(typeof otherPlayer != 'undefined'){
-              if(otherPlayer.ready){
-                startGame(user.id);
-                startGame(otherPlayer.id);
-              }
-            }
-          });
+      setupUser(socket, callback);
+      Communication.onDisconnect(socket, id => {
+        var user = _.findWhere(users, {id: id});
+        if(typeof user == 'undefined'){
+          return;
+        }
+        roomHandler.deleteRoom(user.room, () => {});
       });
-    callback(socket);
   });
 }
 
@@ -173,7 +159,7 @@ function verifyBallPosition(user){
 }
 
 function updateScore(player1, player2){
-  if(player1.score === 2){
+  if(player1.score === 10){
     Communication.toClient(player1.id, {"name": "win"});
     Communication.toClient(player2.id, {"name": "lose"});
     return;
@@ -201,4 +187,31 @@ function startBall(user){
         }
         Communication.toClient(user.id, message)
     });
+}
+
+function setupUser(socket, callback){
+    var user = new User(socket.id, 0);
+    roomHandler.findRoom(user, (room)=>{
+        user.setNumber(room.users.length);
+        user.room = room.id;
+        users.push(user);
+        startBall(user);
+        onBallPosition(socket, room, function(data){
+          setBallPosition(user);
+          verifyBallPosition(user);
+        });
+
+        Communication.onReady(socket, function(){
+          user.ready = true;
+          var otherPlayer = getOtherPlayer(user);
+          if(typeof otherPlayer != 'undefined'){
+            if(otherPlayer.ready){
+              startGame(user.id);
+              startGame(otherPlayer.id);
+            }
+          }
+        });
+
+    });
+    callback(socket);
 }
